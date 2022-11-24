@@ -11,6 +11,12 @@ public class Ship {
         this.counter = 20;
 
     }
+    public Ship(int aliveOnBoard, int dead, int counter){
+        this.aliveOnBoard = aliveOnBoard;
+        this.dead = dead;
+        this.counter = counter;
+
+    }
     public void Update(){
         if (aliveOnBoard==0 && counter>0){
             counter --;
