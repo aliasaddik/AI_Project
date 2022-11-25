@@ -57,16 +57,21 @@ public class CoastGuard extends SearchProblem{
         String [] gridSeparated = grid.split(";");
         // matrix ( 0-> empty // 1-> ship // 2-> station)
         String[] bounds = gridSeparated[0].split(",");
+
         int[][] matrix = new int[Integer.parseInt(bounds[0])][Integer.parseInt(bounds[1])];
+        System.out.println("my bounds are x= "+bounds[0]+" y = "+ bounds[1]);
         int spotsAvailable = Integer.parseInt(gridSeparated[1]);
+        System.out.println("spots available on coast guard = "+ spotsAvailable);
         bounds = gridSeparated[2].split(",");
         int guardX =  Integer.parseInt(bounds[0]);
         int guardY =  Integer.parseInt(bounds[1]);
+        System.out.println("my agent is at x= "+bounds[0]+" y = "+ bounds[1]);
         bounds = gridSeparated[3].split(",");
         for(int i = 0 ; i<bounds.length; i++) {
             int x = Integer.parseInt(bounds[i]);
             int y = Integer.parseInt(bounds[++i]);
             matrix[x][y]=2;
+            System.out.println("station is at x = "+ x+" y = "+y);
         }
         bounds = gridSeparated[4].split(",");
         HashMap<String,Ship> ships = new HashMap<>();
@@ -80,8 +85,9 @@ public class CoastGuard extends SearchProblem{
             Ship ship = new Ship(capacity);
             ships.put(x+","+y,ship);
             peopleToRescue+=capacity;
+            System.out.println("ship is at x = "+ x+" y = "+y+" with capacity "+ capacity);
         }
-        System.out.println("initially peopleto rescue in solve "+peopleToRescue);
+        System.out.println("initially people to rescue in solve "+peopleToRescue);
         State initState= new State(guardX,guardY,ships,spotsAvailable,peopleToRescue, ships.size(),0,0);
         switch(strategy) {
             case "BF":
@@ -109,220 +115,231 @@ public class CoastGuard extends SearchProblem{
                return "";
         }
     }
+    private static State updateMoving(State nodeToExpandState,Operator operator){
+        int shipsWithPeopleAlive = 0;
+        int boxesLost = 0;
+        HashMap<String, Ship> prevShips = nodeToExpandState.ships;
+
+        HashMap<String, Ship> myShips = new HashMap<>();
+        for (String key : prevShips.keySet()) {
+
+            Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
+                    prevShips.get(key).counter);
+
+            if(newShip.aliveOnBoard>0)
+                shipsWithPeopleAlive++;
+
+            newShip.Update();
+            if (newShip.counter>0)
+                myShips.put(key,newShip);
+            else{
+                boxesLost++;
+
+            }
+
+            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
+        }
+        int guardX = nodeToExpandState.guardX;
+        int guardY = nodeToExpandState.guardY;
+        System.out.println("ANA delwa2ty ha move we ana aslun fe x: "+ guardX +" y: "+ guardY);
+        switch (operator){
+            case UP: guardX--;break;
+            case DOWN: guardX++; break;
+            case RIGHT: guardY++; break;
+            case LEFT: guardY--; break;
+
+        }
+        State newState = new State(guardX, guardY, myShips ,
+                nodeToExpandState.spotsAvailable,nodeToExpandState.peopleToRescue-shipsWithPeopleAlive,
+                nodeToExpandState.boxesToRetrieve-boxesLost, nodeToExpandState.peopleRescued,
+                nodeToExpandState.boxesRetrieved);
+        return newState;
+    }
+    private static State DropOff(State nodeToExpandState , State initState){
+        int peopleOnBoard = initState.spotsAvailable - nodeToExpandState.spotsAvailable;
+        HashMap<String, Ship> myships = new HashMap<>();
+        int shipsWithPeopleAlive =0;
+        int boxesLost= 0;
+        HashMap<String, Ship> prevShips = nodeToExpandState.ships;
+        for (String key : prevShips.keySet()) {
+
+            Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
+                    prevShips.get(key).counter);
+            if(newShip.aliveOnBoard>0)
+                shipsWithPeopleAlive++;
+            newShip.Update();
+            if (newShip.counter>0)
+                myships.put(key,newShip);
+            else{
+                boxesLost++;
+            }
+
+            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
+        }
+
+        State newState = new State(nodeToExpandState.guardX, nodeToExpandState.guardY, myships,
+                initState.spotsAvailable,nodeToExpandState.peopleToRescue-(shipsWithPeopleAlive+peopleOnBoard),
+                nodeToExpandState.boxesToRetrieve-boxesLost,
+                nodeToExpandState.peopleRescued+peopleOnBoard,
+                nodeToExpandState.boxesRetrieved);
+        return newState;
+    }
+    private static State retrieve ( State nodeToExpandState){
+        HashMap<String, Ship> myships = new HashMap<>();
+        int shipsWithPeopleAlive = 0;
+        int boxesLost = 0;
+        HashMap<String, Ship> prevShips = nodeToExpandState.ships;
+        for (String key : prevShips.keySet()) {
+            String[] indices = key.split(",");
+            Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
+                    prevShips.get(key).counter);
+
+            if (nodeToExpandState.guardX == Integer.parseInt(indices[0]) &&
+                    nodeToExpandState.guardY == Integer.parseInt(indices[1]) && newShip.aliveOnBoard<=0){
+                newShip.counter=0;
+            }
+            else{
+
+                if(newShip.aliveOnBoard>0)
+                    shipsWithPeopleAlive++;
+                newShip.Update();
+                if (newShip.counter>0)
+                    myships.put(key,newShip);
+                else{
+                    boxesLost++;
+                }
+            }
+            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
+        }
+
+        State newState = new State(nodeToExpandState.guardX, nodeToExpandState.guardY, myships,
+                nodeToExpandState.spotsAvailable,nodeToExpandState.peopleToRescue-shipsWithPeopleAlive,
+                nodeToExpandState.boxesToRetrieve-boxesLost-1, nodeToExpandState.peopleRescued,
+                nodeToExpandState.boxesRetrieved+1);
+        return newState;
+    }
+    public static State pickUp(State nodeToExpandState){
+        HashMap<String, Ship> myships = new HashMap<>();
+        int shipsWithPeopleAlive =0;
+        int boxesLost= 0;
+        int peopleRetrieved=0;
+        HashMap<String, Ship> prevShips = nodeToExpandState.ships;
+        for (String key : prevShips.keySet()) {
+            String[] indices = key.split(",");
+            Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
+                    prevShips.get(key).counter);
+
+            if (nodeToExpandState.guardX == Integer.parseInt(indices[0])&&
+                    nodeToExpandState.guardY == Integer.parseInt(indices[1])&& newShip.aliveOnBoard>0) {
+
+                newShip.aliveOnBoard-= nodeToExpandState.spotsAvailable;
+                if (newShip.aliveOnBoard<0){
+                    newShip.aliveOnBoard=0;
+                }
+                peopleRetrieved = prevShips.get(key).aliveOnBoard-newShip.aliveOnBoard;
+
+            }
+
+            if(newShip.aliveOnBoard>0)
+                shipsWithPeopleAlive++;
+            newShip.Update();
+            if (newShip.counter>0)
+                myships.put(key,newShip);
+            else{
+                boxesLost++;
+
+            }
+            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
+        }
+
+        State newState = new State(nodeToExpandState.guardX, nodeToExpandState.guardY, myships,
+                nodeToExpandState.spotsAvailable-peopleRetrieved,nodeToExpandState.peopleToRescue-shipsWithPeopleAlive ,
+                nodeToExpandState.boxesToRetrieve-boxesLost, nodeToExpandState.peopleRescued,
+                nodeToExpandState.boxesRetrieved);
+        return newState;
+
+
+    }
+
     private static String BFS(int[][] matrix, State initState){
         Queue<Node> queue = new LinkedList<>();
+        System.out.println("gaurdX: "+ initState.guardX+ " gaurdY: "+ initState.guardY+ " people to rescue: "+initState.peopleToRescue+
+                "spots available on coast guard: "+initState.spotsAvailable+ " no of ships: "+initState.ships.size()+
+                " people rescued: "+ initState.peopleRescued+ " boxes retreived: "+ initState.boxesRetrieved+
+                " boxes to retrieve: "+ initState.boxesToRetrieve);
+
         Node initNode = new Node (initState,null,null);
         queue.offer(initNode);
         while (!queue.isEmpty()) {
             Node nodeToExpand = queue.poll();
+            System.out.println("people to rescue koll marra: "+nodeToExpand.state.peopleToRescue);
+            System.out.println("initstate spots Available: "+ initState.spotsAvailable);
+            System.out.println("current spots avialable: "+ nodeToExpand.state.spotsAvailable);
             if (!goalTest(nodeToExpand.state)){
                 if(nodeToExpand.state.guardX>0){
-                    HashMap<String, Ship> myships = new HashMap<>();
-                    int shipsWithPeopleAlive =0;
-                    int boxesLost= 0;
-                    HashMap<String, Ship> prevShips = nodeToExpand.state.ships;
-                    for (String key : prevShips.keySet()) {
-
-                        Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
-                                prevShips.get(key).counter);
-                        if(newShip.aliveOnBoard>0)
-                            shipsWithPeopleAlive++;
-                        newShip.Update();
-                        if (newShip.counter>0)
-                            myships.put(key,newShip);
-                        else{
-                            boxesLost++;
-                        }
-                    }
-
-                    State newState = new State(nodeToExpand.state.guardX-1, nodeToExpand.state.guardY, myships,
-                            nodeToExpand.state.spotsAvailable,nodeToExpand.state.peopleToRescue-shipsWithPeopleAlive,
-                            nodeToExpand.state.boxesToRetrieve-boxesLost, nodeToExpand.state.peopleRescued, nodeToExpand.state.boxesRetrieved);
+                    State newState = updateMoving(nodeToExpand.state,Operator.UP);
                     Node newNode = new Node(newState, nodeToExpand, Operator.UP);
                     queue.offer(newNode);
-
+                    System.out.println("up");
                 }
+
                 if(nodeToExpand.state.guardX<matrix.length-1){
-                    HashMap<String, Ship> myships = new HashMap<>();
-                    int shipsWithPeopleAlive =0;
-                    int boxesLost= 0;
-                    HashMap<String, Ship> prevShips = nodeToExpand.state.ships;
-                    for (String key : prevShips.keySet()) {
-
-                        Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
-                                prevShips.get(key).counter);
-                        if(newShip.aliveOnBoard>0)
-                            shipsWithPeopleAlive++;
-                        newShip.Update();
-                        if (newShip.counter>0)
-                            myships.put(key,newShip);
-                        else{
-                            boxesLost++;
-                        }
-                    }
-
-                    State newState = new State(nodeToExpand.state.guardX+1, nodeToExpand.state.guardY, myships,
-                            nodeToExpand.state.spotsAvailable,nodeToExpand.state.peopleToRescue-shipsWithPeopleAlive,
-                            nodeToExpand.state.boxesToRetrieve-boxesLost, nodeToExpand.state.peopleRescued, nodeToExpand.state.boxesRetrieved);
+                    State newState = updateMoving(nodeToExpand.state,Operator.DOWN);
                     Node newNode = new Node(newState, nodeToExpand, Operator.DOWN);
                     queue.offer(newNode);
+                    System.out.println("down");
                 }
+
                 if(nodeToExpand.state.guardY<matrix[0].length-1){
-                    HashMap<String, Ship> myships = new HashMap<>();
-                    int shipsWithPeopleAlive =0;
-                    int boxesLost= 0;
-                    HashMap<String, Ship> prevShips = nodeToExpand.state.ships;
-                    for (String key : prevShips.keySet()) {
-
-                        Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
-                                prevShips.get(key).counter);
-                        if(newShip.aliveOnBoard>0)
-                            shipsWithPeopleAlive++;
-                        newShip.Update();
-                        if (newShip.counter>0)
-                            myships.put(key,newShip);
-                        else{
-                            boxesLost++;
-                        }
-                    }
-
-                    State newState = new State(nodeToExpand.state.guardX, nodeToExpand.state.guardY+1, myships,
-                            nodeToExpand.state.spotsAvailable,nodeToExpand.state.peopleToRescue-shipsWithPeopleAlive,
-                            nodeToExpand.state.boxesToRetrieve-boxesLost, nodeToExpand.state.peopleRescued, nodeToExpand.state.boxesRetrieved);
+                    State newState = updateMoving(nodeToExpand.state,Operator.RIGHT);
                     Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT);
                     queue.offer(newNode);
+                    System.out.println("right");
                 }
                 if(nodeToExpand.state.guardY>0){
-                    HashMap<String, Ship> myships = new HashMap<>();
-                    int shipsWithPeopleAlive =0;
-                    int boxesLost= 0;
-                    HashMap<String, Ship> prevShips = nodeToExpand.state.ships;
-                    for (String key : prevShips.keySet()) {
-
-                        Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
-                                prevShips.get(key).counter);
-                        if(newShip.aliveOnBoard>0)
-                            shipsWithPeopleAlive++;
-                        newShip.Update();
-                        if (newShip.counter>0)
-                            myships.put(key,newShip);
-                        else{
-                            boxesLost++;
-                        }
-                    }
-
-                    State newState = new State(nodeToExpand.state.guardX, nodeToExpand.state.guardY-1, myships,
-                            nodeToExpand.state.spotsAvailable,nodeToExpand.state.peopleToRescue-shipsWithPeopleAlive,
-                            nodeToExpand.state.boxesToRetrieve-boxesLost, nodeToExpand.state.peopleRescued, nodeToExpand.state.boxesRetrieved);
+                    State newState = updateMoving(nodeToExpand.state,Operator.LEFT);
                     Node newNode = new Node(newState, nodeToExpand, Operator.LEFT);
                     queue.offer(newNode);
+                    System.out.println("left");
 
                 }
-                // drop_off
-                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2&& nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
-                    int peopleOnBoard = initState.spotsAvailable - nodeToExpand.state.spotsAvailable;
-                    HashMap<String, Ship> myships = new HashMap<>();
-                    int shipsWithPeopleAlive =0;
-                    int boxesLost= 0;
-                    HashMap<String, Ship> prevShips = nodeToExpand.state.ships;
-                    for (String key : prevShips.keySet()) {
-
-                        Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
-                                prevShips.get(key).counter);
-                        if(newShip.aliveOnBoard>0)
-                            shipsWithPeopleAlive++;
-                        newShip.Update();
-                        if (newShip.counter>0)
-                            myships.put(key,newShip);
-                        else{
-                            boxesLost++;
-                        }
-                    }
-
-                    State newState = new State(nodeToExpand.state.guardX, nodeToExpand.state.guardY, myships,
-                             initState.spotsAvailable,nodeToExpand.state.peopleToRescue-shipsWithPeopleAlive-peopleOnBoard,
-                            nodeToExpand.state.boxesToRetrieve-boxesLost, nodeToExpand.state.peopleRescued+peopleOnBoard,
-                            nodeToExpand.state.boxesRetrieved);
+                // drop off
+                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
+                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
+                    State newState =DropOff(nodeToExpand.state, initState);
                     Node newNode = new Node(newState, nodeToExpand, Operator.DROP);
                     queue.offer(newNode);
+
+                    System.out.println("drop off");
+                    System.out.println("parent Node Info :");
+                    System.out.println("gaurdX: "+ nodeToExpand.state.guardX+ " gaurdY: "+ nodeToExpand.state.guardY+ " people to rescue: "
+                            +nodeToExpand.state.peopleToRescue+ "spots available on coast guard: "+nodeToExpand.state.spotsAvailable+
+                            " no of ships: "+nodeToExpand.state.ships.size()+
+                            " people rescued: "+ nodeToExpand.state.peopleRescued+ " boxes retreived: "+ nodeToExpand.state.boxesRetrieved+
+                            " boxes to retrieve: "+ nodeToExpand.state.boxesToRetrieve);
+                    System.out.println("new Node Info :");
+                    System.out.println("gaurdX: "+ newState.guardX+ " gaurdY: "+ newState.guardY+ " people to rescue: "+newState.peopleToRescue+
+                            "spots available on coast guard: "+newState.spotsAvailable+ " no of ships: "+newState.ships.size()+
+                            " people rescued: "+ newState.peopleRescued+ " boxes retreived: "+ newState.boxesRetrieved+
+                            " boxes to retrieve: "+ newState.boxesToRetrieve);
                 }
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1){
 
-                    HashMap<String, Ship> myships = new HashMap<>();
-                    int shipsWithPeopleAlive =0;
-                    int boxesLost= 0;
-                    HashMap<String, Ship> prevShips = nodeToExpand.state.ships;
-                    for (String key : prevShips.keySet()) {
-                        String[] indices = key.split(",");
-                        Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
-                                prevShips.get(key).counter);
-
-                        if (nodeToExpand.state.guardX == Integer.parseInt(indices[0])&&
-                                nodeToExpand.state.guardX == Integer.parseInt(indices[1])&& newShip.aliveOnBoard==0 ){
-                            newShip.counter=0;
-                        }
-                        else{
-
-                        if(newShip.aliveOnBoard>0)
-                            shipsWithPeopleAlive++;
-                        newShip.Update();
-                        if (newShip.counter>0)
-                            myships.put(key,newShip);
-                        else{
-                            boxesLost++;
-                        }
-                        }
-                    }
-
-                    State newState = new State(nodeToExpand.state.guardX, nodeToExpand.state.guardY, myships,
-                            nodeToExpand.state.spotsAvailable,nodeToExpand.state.peopleToRescue-shipsWithPeopleAlive,
-                            nodeToExpand.state.boxesToRetrieve-boxesLost-1, nodeToExpand.state.peopleRescued,
-                            nodeToExpand.state.boxesRetrieved+1);
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                    State newState = retrieve(nodeToExpand.state);
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE);
                     queue.offer(newNode);
+                    System.out.println("retreived");
                 }
-
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1){
-
-                    HashMap<String, Ship> myships = new HashMap<>();
-                    int shipsWithPeopleAlive =0;
-                    int boxesLost= 0;
-                    int peopleRetrieved=0;
-                    HashMap<String, Ship> prevShips = nodeToExpand.state.ships;
-                    for (String key : prevShips.keySet()) {
-                        String[] indices = key.split(",");
-                        Ship newShip = new Ship(prevShips.get(key).aliveOnBoard, prevShips.get(key).dead,
-                                prevShips.get(key).counter);
-
-                        if (nodeToExpand.state.guardX == Integer.parseInt(indices[0])&&
-                                nodeToExpand.state.guardX == Integer.parseInt(indices[1])&& newShip.aliveOnBoard>0) {
-
-                            newShip.aliveOnBoard-= nodeToExpand.state.spotsAvailable;
-                            if (newShip.aliveOnBoard<0){
-                                newShip.aliveOnBoard=0;
-                            }
-                            peopleRetrieved = prevShips.get(key).aliveOnBoard-newShip.aliveOnBoard;
-
-                        }
-
-                            if(newShip.aliveOnBoard>0)
-                                shipsWithPeopleAlive++;
-                            newShip.Update();
-                            if (newShip.counter>0)
-                                myships.put(key,newShip);
-                            else{
-                                boxesLost++;
-
-                        }
-                    }
-
-                    State newState = new State(nodeToExpand.state.guardX, nodeToExpand.state.guardY, myships,
-                            nodeToExpand.state.spotsAvailable-peopleRetrieved,nodeToExpand.state.peopleToRescue-shipsWithPeopleAlive ,
-                            nodeToExpand.state.boxesToRetrieve-boxesLost, nodeToExpand.state.peopleRescued,
-                            nodeToExpand.state.boxesRetrieved);
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
                     Node newNode = new Node(newState, nodeToExpand, Operator.PICK_UP);
                     queue.offer(newNode);
+                    System.out.println("PickedUp");
                 }
+
 
             }
             else{
@@ -375,7 +392,11 @@ public class CoastGuard extends SearchProblem{
     public static void main(String[] args) {
         CoastGuard cs = new CoastGuard();
         System.out.println( solve("5,6;50;0,1;0,4,3,3;1,1,90;","BF",false));
+
+
+
     }
+
 
 
     public static boolean goalTest(Object State) {
