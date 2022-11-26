@@ -11,7 +11,7 @@ import org.junit.runners.MethodSorters;
 
 import code.CoastGuard;
 
-
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 
 public class CoastGuardPublic {
 	
