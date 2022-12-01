@@ -29,25 +29,26 @@ public class State {
 
 
     }
-    public boolean isEqual(State otherState){
-
-        if(this.peopleRescued!= otherState.peopleRescued || this.peopleToRescue!= otherState.peopleToRescue || this.boxesRetrieved != otherState.boxesRetrieved || this.boxesToRetrieve!= otherState.boxesToRetrieve
-        || this.spotsAvailable!= otherState.spotsAvailable || this.ships.size()!=otherState.ships.size()){
-           return false;
-        }
-        HashMap<String,Ship> otherShips= otherState.ships;
-        for (String key : ships.keySet()) {
-            Ship otherShip = otherShips.get(key);
-            if(otherShip==null){
-                return false;
-            }
-            Ship currentShip= ships.get(key);
-            if(currentShip.aliveOnBoard!=otherShip.aliveOnBoard || currentShip.counter!=otherShip.counter || currentShip.dead!=otherShip.dead){
-                return false;
-            }
-        }
-        return true;
-
-    }
+//    public boolean isEqual(State otherState){
+//
+//        if(this.peopleRescued!= otherState.peopleRescued || this.peopleToRescue!= otherState.peopleToRescue ||
+//                this.boxesRetrieved != otherState.boxesRetrieved || this.boxesToRetrieve!= otherState.boxesToRetrieve
+//        || this.spotsAvailable!= otherState.spotsAvailable || this.ships.size()!=otherState.ships.size()){
+//           return false;
+//        }
+//        HashMap<String,Ship> otherShips= otherState.ships;
+//        for (String key : ships.keySet()) {
+//            Ship otherShip = otherShips.get(key);
+//            if(otherShip==null){
+//                return false;
+//            }
+//            Ship currentShip= ships.get(key);
+//            if(currentShip.aliveOnBoard!=otherShip.aliveOnBoard || currentShip.counter!=otherShip.counter || currentShip.dead!=otherShip.dead){
+//                return false;
+//            }
+//        }
+//        return true;
+//
+//    }
 
 }

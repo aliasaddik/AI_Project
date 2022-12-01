@@ -44,10 +44,10 @@ public class CoastGuardPublic {
 	
 	@Test(timeout = 10000)
 	public void testa2() throws Exception {
-		String solution = CoastGuard.solve(grid2, "BF", true);
+		String solution = CoastGuard.solve(grid2, "BF", false);
 		assertTrue("The output actions do not lead to a goal state.", applyPlan(grid2, solution));
 	}
-	@Test(timeout = 10000)
+	@Test(timeout = 30000)
 	public void testa3() throws Exception {
 		String solution = CoastGuard.solve(grid3, "BF", false);
 		assertTrue("The output actions do not lead to a goal state.", applyPlan(grid3, solution));
@@ -84,7 +84,7 @@ public class CoastGuardPublic {
 		String solution = CoastGuard.solve(grid9, "BF", false);
 		assertTrue("The output actions do not lead to a goal state.", applyPlan(grid9, solution));
 	}	
-
+	
 	
 	@Test(timeout = 10000)
 	public void testb0() throws Exception {
@@ -168,7 +168,7 @@ public class CoastGuardPublic {
 	}
 	@Test(timeout = 10000)
 	public void testc3() throws Exception {
-		String solution = CoastGuard.solve(grid3, "UC", false);
+		String solution = CoastGuard.solve(grid3, "UC", true);
 		assertTrue("The output actions do not lead to a goal state.", applyPlan(grid3, solution));
 	}
 
@@ -434,7 +434,6 @@ public class CoastGuardPublic {
 	public void testh0() throws Exception {
 		String solution = CoastGuard.solve(grid0, "AS2", false);
 		solution = solution.replace(" ", "");
-		System.out.println(solution);
 		assertTrue("The output actions do not lead to a goal state.", applyPlan(grid0, solution));
 	}
 	
@@ -442,7 +441,6 @@ public class CoastGuardPublic {
 	public void testh1() throws Exception {
 		String solution = CoastGuard.solve(grid1, "AS2", false);
 		solution = solution.replace(" ", "");
-		System.out.println(solution);
 		assertTrue("The output actions do not lead to a goal state.", applyPlan(grid1, solution));
 	}
 	
@@ -532,11 +530,15 @@ static class Checker{
 				mn();
 				return false;
 			}
+			if(ss.get(x00+","+x01)<0) {
+				mn();
+				return false;
+			}
 			byte ts = ss.get(x00+","+x01);
 			byte cc = (byte) (xc-cp);
 			if(cc>=ts) {
 				cp+=ts;
-				ss.replace(x00+","+x01, (byte)-100);
+				ss.replace(x00+","+x01, (byte)-20);
 			}
 			else {
 				cp=xc;
@@ -563,10 +565,13 @@ static class Checker{
 				mn();
 				return false;
 			}
+			if(ss.get(x00+","+x01)<0 && ss.get(x00+","+x01)>-20) {
+			
 			r+=1;
 			ss.replace(x00+","+x01,(byte)0);
 			mn();
-			return true;
+			return true;}
+			return false;
 
 		}
 		boolean f99(int i, int j) {
@@ -579,7 +584,7 @@ static class Checker{
 			for (String k : ss.keySet()) {
 				byte v = ss.get(k);
 				if (v<=(byte)-1 && v>=(byte)-20) v++;else {
-					if (v==1) {v=(byte)-20;d++;}
+					if (v==1) {v=(byte)-19;d++;}
 					else {
 					if 
 					(v>(byte)1) { v--; d++;}}
@@ -674,11 +679,13 @@ static class Checker{
 			default: linkin = false; break;
 						
 			}
-
-			if(!linkin)
+			if(!linkin) {
+				System.out.println("action that failed "+actions[i]);
 				return false;
+				}
 	}
-
+		
+	
 		return s.cool() && s.d==blue && s.r==doors;
 	}
 }

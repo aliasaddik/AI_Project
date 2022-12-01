@@ -16,5 +16,10 @@ public class Node {
         this.operator = operator;
         if (parent!= null)
             this.depth = parent.depth+1;
+        else{
+            this.depth = 0;
+        }
+
     }
+
 }
