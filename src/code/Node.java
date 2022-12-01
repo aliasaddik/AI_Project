@@ -2,13 +2,15 @@ package code;
 
 import java.util.HashMap;
 
-public class Node {
+public class Node implements Comparable<Node> {
 
     State state;
     Node parent;
     Operator operator;
     int depth;
     int pathCost;
+    int h1;
+    int h2;
 
     public Node(State currState, Node parent, Operator operator){
         this.state= currState;
@@ -22,4 +24,9 @@ public class Node {
 
     }
 
+    @Override
+    public int compareTo(Node node) {
+
+        return 0;
+    }
 }

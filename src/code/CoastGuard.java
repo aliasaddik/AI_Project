@@ -3,7 +3,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class CoastGuard extends SearchProblem{
-
+    public static int capacity;
     public static String genGrid(){
         Random rand = new Random();
         StringBuilder grid = new StringBuilder();
