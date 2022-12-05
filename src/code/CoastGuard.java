@@ -89,9 +89,10 @@ public class CoastGuard extends SearchProblem{
         System.out.println("initially people to rescue in solve "+peopleToRescue);
         State initState= new State(guardX,guardY,ships,spotsAvailable,peopleToRescue, ships.size(),0,0);
 
+
         switch(strategy) {
             case "BF":
-              return BFS(matrix,initState);
+              return BFS(matrix,initState,visualize);
 
             case "DF":
                 return DFS(matrix,initState, Integer.MAX_VALUE);
@@ -100,7 +101,7 @@ public class CoastGuard extends SearchProblem{
                 return IDS(matrix,initState);
 
             case "GR1":
-                return GR1(matrix,initState,calcMinDist(shipsLocations,stations));
+                return GR1(matrix,initState,calcMinDist(shipsLocations,stations),visualize);
 
             case "GR2":
                 return GR2(matrix,initState);
@@ -271,7 +272,7 @@ public class CoastGuard extends SearchProblem{
 
     }
 
-    private static String BFS(int[][] matrix, State initState){
+    private static String BFS(int[][] matrix, State initState,boolean visualize){
         HashSet<String> visitedStates = new HashSet<>();
         Queue<Node> queue = new LinkedList<>();
         System.out.println("gaurdX: "+ initState.guardX+ " gaurdY: "+ initState.guardY+ " people to rescue: "+initState.peopleToRescue+
@@ -373,6 +374,7 @@ public class CoastGuard extends SearchProblem{
                 }
             }
             else{
+                visualize(matrix,nodeToExpand);
                 StringBuilder solution = new StringBuilder();
                 int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
                 int retrieved = nodeToExpand.state.boxesRetrieved;
@@ -538,7 +540,7 @@ public class CoastGuard extends SearchProblem{
 
         return "";
     }
-    private static String GR1(int[][] matrix, State initState,int minDist){
+    private static String GR1(int[][] matrix, State initState,int minDist,boolean visualize){
         PriorityQueue<Node> priorityQueue = new PriorityQueue<>();
         HashSet<String> visitedStates = new HashSet<>();
         System.out.println("gaurdX: "+ initState.guardX+ " gaurdY: "+ initState.guardY+ " people to rescue: "+initState.peopleToRescue+
@@ -673,17 +675,10 @@ public class CoastGuard extends SearchProblem{
     public static void main(String[] args) {
         CoastGuard cs = new CoastGuard();
         //test 2222
-        String sol = solve("5,6;50;0,1;0,4,3,3;1,1,90;","GR1", false);
-        System.out.println(sol);
-//        ArrayList<ArrayList<ArrayList<State>>> lookUp= new ArrayList<>();
-//        for(int i=0;i< 2;i++){
-//            ArrayList<ArrayList<State>> currentList = new ArrayList<>();
-//            for(int j=0;j<2;j++){
-//                currentList.add(new ArrayList<State>());
-//
-//            }
-//            lookUp.add(currentList);
-//        }
+       String sol = solve("8,5;60;4,6;2,7;3,4,37,3,5,93,4,0,40;","BF", false);
+       // System.out.println(sol);
+       // visualize(new int[5][5]);
+
     }
     public static String  stringify (State myState){
         StringBuilder result =new StringBuilder(myState.peopleRescued+";"+ myState.peopleToRescue+";"+myState.boxesToRetrieve+";"+ myState.guardX+";"+
@@ -696,8 +691,63 @@ public class CoastGuard extends SearchProblem{
         return result.toString();
 
     }
+    public static void visualize(int [][] grid, Node node){
+        if(node.parent==null){
+            printGrid(grid, node.state);
+            System.out.println("");
+            System.out.println("SPOTS AVAILABLE ON COST GUARD: " +node.state.spotsAvailable);
+            return;
+        }
+        visualize(grid,node.parent);
+        System.out.println("");
+        printGrid(grid,node.state);
+        System.out.println("");
+        System.out.println("SPOTS AVAILABLE ON COST GUARD: " +node.state.spotsAvailable);
 
+    }
+    public static void  printGrid(int [][] grid, State state){
+        for(int i=0;i<grid.length;i++){
 
+            for(int j=0;j<grid[i].length;j++){ //prints row separation
+
+                System.out.print("------");
+            }
+            System.out.println(" ");
+
+            for(int j=0;j<grid[i].length;j++){ //prints what is present in this location if the grid
+                if(j==0){
+                    System.out.print("|");
+                }
+                if(state.guardY==j && state.guardX==i){ System.out.print("C");}
+                else{System.out.print(" ");}
+
+                if(grid[i][j]==0){
+                    System.out.print("    |");
+                }
+                if(grid[i][j]==1){
+                    Ship ship =state.ships.get(i+","+j);
+                    if(ship!=null) {
+                        int alive = ship.aliveOnBoard;
+                        if (alive < 10) {
+                            System.out.print(" S" + alive + " |");
+                        } else {
+                            System.out.print(" S" + alive + "|");
+                        }
+                    }else{
+                        System.out.print(" S" + "X" + " |"); //this is a ship with the box retrieved
+                    }
+                }
+                if(grid[i][j]==2){
+                    System.out.print(" #  |");
+                }
+            }
+            System.out.println("");
+        }
+        for(int j=0;j<grid[0].length;j++){ //prints last row outline
+            System.out.print("------");
+        }
+
+    }
 
     public static boolean goalTest(Object State) {
         State state = (State)State;
