@@ -13,9 +13,11 @@ public class State {
     int spotsAvailable;
     int boxesRetrieved;
 
+    int shipsWithPpl;
+
 
     public State(int guardX, int guardY, HashMap<String,Ship> ships, int spotsAvailable, int peopleToRescue,
-                 int boxesToRetrieve, int peopleRescued, int boxesRetrieved ){
+                 int boxesToRetrieve, int peopleRescued, int boxesRetrieved , int shipsWithPpl ){
         this.guardX = guardX;
         this.guardY = guardY;
         this.ships = ships;
@@ -24,8 +26,7 @@ public class State {
         this. boxesToRetrieve = boxesToRetrieve;
         this.peopleRescued = peopleRescued;
         this.boxesRetrieved = boxesRetrieved;
-
-
+        this.shipsWithPpl=shipsWithPpl;
 
 
     }

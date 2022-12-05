@@ -9,12 +9,14 @@ public class Node implements Comparable<Node> {
     Operator operator;
     int depth;
     int pathCost;
+    int boxesLost;
     int heuristic;
 
     public Node(State currState, Node parent, Operator operator){
         this.state= currState;
         this.parent = parent;
         this.operator = operator;
+        this.pathCost=0;
         if (parent!= null)
             this.depth = parent.depth+1;
         else{
@@ -28,6 +30,20 @@ public class Node implements Comparable<Node> {
         this.parent = parent;
         this.operator = operator;
         this.heuristic = heuristic;
+        this.pathCost=0;
+        if (parent != null)
+            this.depth = parent.depth + 1;
+        else {
+            this.depth = 0;
+        }
+    }
+    public Node(State currState, Node parent, Operator operator, int heuristic, int pathCost, int boxesLost) {
+        this.state = currState;
+        this.parent = parent;
+        this.operator = operator;
+        this.heuristic = heuristic;
+        this.pathCost=pathCost;
+        this.boxesLost=boxesLost;
         if (parent != null)
             this.depth = parent.depth + 1;
         else {
@@ -37,6 +53,7 @@ public class Node implements Comparable<Node> {
 
     @Override
     public int compareTo(Node node) {
-        return this.heuristic - node.heuristic;
+
+        return (this.heuristic+this.pathCost) - (node.heuristic+node.pathCost);
     }
 }
