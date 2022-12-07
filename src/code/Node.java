@@ -8,18 +8,18 @@ public class Node implements Comparable<Node> {
     Node parent;
     Operator operator;
     int depth;
-    int pathCost;
+    int[] pathCost;
     int boxesLost;
     int heuristic;
 
-    public Node(State currState, Node parent, Operator operator){
-        this.state= currState;
+    public Node(State currState, Node parent, Operator operator) {
+        this.state = currState;
         this.parent = parent;
         this.operator = operator;
-        this.pathCost=0;
-        if (parent!= null)
-            this.depth = parent.depth+1;
-        else{
+        this.pathCost = new int[]{0, 0};
+        if (parent != null)
+            this.depth = parent.depth + 1;
+        else {
             this.depth = 0;
         }
 
@@ -30,20 +30,21 @@ public class Node implements Comparable<Node> {
         this.parent = parent;
         this.operator = operator;
         this.heuristic = heuristic;
-        this.pathCost=0;
+        this.pathCost = new int[]{0, 0};
         if (parent != null)
             this.depth = parent.depth + 1;
         else {
             this.depth = 0;
         }
     }
-    public Node(State currState, Node parent, Operator operator, int heuristic, int pathCost, int boxesLost) {
+
+    public Node(State currState, Node parent, Operator operator, int heuristic, int[] pathCost) {
         this.state = currState;
         this.parent = parent;
         this.operator = operator;
         this.heuristic = heuristic;
-        this.pathCost=pathCost;
-        this.boxesLost=boxesLost;
+        this.pathCost = pathCost;
+        this.boxesLost = boxesLost;
         if (parent != null)
             this.depth = parent.depth + 1;
         else {
@@ -53,7 +54,11 @@ public class Node implements Comparable<Node> {
 
     @Override
     public int compareTo(Node node) {
+        if ((this.heuristic+this.pathCost[0]) == (node.heuristic+node.pathCost[0])) {
+            return (this.pathCost[1])-(node.pathCost[1]) ;
+        }
 
-        return (this.heuristic+this.pathCost) - (node.heuristic+node.pathCost);
+        return (this.heuristic+this.pathCost[0])-(node.heuristic+node.pathCost[0]) ;
+
     }
 }
