@@ -353,7 +353,8 @@ public class CoastGuard extends SearchProblem{
                 // retrieved
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0&&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                     State newState = retrieve(nodeToExpand.state);
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE);
                     String stringifiedState = stringify(newState);
@@ -468,7 +469,8 @@ public class CoastGuard extends SearchProblem{
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0&&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                     State newState = retrieve(nodeToExpand.state);
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE);
                     String stringifiedState = stringify(newState);
@@ -609,7 +611,8 @@ public class CoastGuard extends SearchProblem{
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0
+                &&nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                     State newState = retrieve(nodeToExpand.state);
                     maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
@@ -733,7 +736,8 @@ public class CoastGuard extends SearchProblem{
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0&&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                     State newState = retrieve(nodeToExpand.state);
                     minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
@@ -859,7 +863,8 @@ public class CoastGuard extends SearchProblem{
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0
+                     && nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                     State newState = retrieve(nodeToExpand.state);
                     maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),pathCost(nodeToExpand, newState,initState));
@@ -982,7 +987,8 @@ public class CoastGuard extends SearchProblem{
              //retrieve
              if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                      nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                     nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                     nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0&&
+                     nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                  State newState = retrieve(nodeToExpand.state);
                  minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
                  Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));

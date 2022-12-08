@@ -18,8 +18,11 @@ public class Ship {
 
     }
     public void Update(){
-
-        if (aliveOnBoard == 0 && counter>0){
+    if(aliveOnBoard==1){
+       dead++;
+       aliveOnBoard--;
+    }
+        if (aliveOnBoard ==0 && counter>0){
             counter --;
         }
         else{
