@@ -10,19 +10,19 @@ public class CoastGuard extends SearchProblem{
         int m = rand.nextInt(11)+5;
         int n = rand.nextInt(11)+5;
         grid.append(m+","+n+";");
-        boolean[][] matrix = new boolean[m][n];
+        boolean[][] matrix = new boolean[n][m];
         int x, y;
         grid.append((rand.nextInt(71)+30)+";");
-        x= rand.nextInt(m);
-        y = rand.nextInt(n);
+        x= rand.nextInt(n);
+        y = rand.nextInt(m);
         grid.append(x+","+y+";");
         matrix[x][y]= true;
         int shipNo = rand.nextInt((m*n-2))+1;
         int statNo = rand.nextInt((m*n)-shipNo-1)+1;
         for (int i =0; i<statNo;i++){
          while(true){
-             x= rand.nextInt(m);
-             y= rand.nextInt(n);
+             x= rand.nextInt(n);
+             y= rand.nextInt(m);
              if ( !matrix[x][y])
                  break;
          }
@@ -33,8 +33,8 @@ public class CoastGuard extends SearchProblem{
         grid.replace(grid.length()-1, grid.length(),";");
         for (int i =0; i<shipNo;i++){
             while(true){
-                x= rand.nextInt(m);
-                y= rand.nextInt(n);
+                x= rand.nextInt(n);
+                y= rand.nextInt(m);
                 if ( !matrix[x][y])
                     break;
             }
@@ -173,6 +173,8 @@ public class CoastGuard extends SearchProblem{
         }
 
         return deadCount;
+
+
     }
     //this heuristic approximates the number of deaths by calculating the min number odf steps to the closest ship and
     //the closest ship .. this heuristic handles the two cases if all the people alive in the situation is less than
@@ -348,8 +350,20 @@ public class CoastGuard extends SearchProblem{
             Node nodeToExpand = queue.poll();
             expanded+=1;
             if (!goalTest(nodeToExpand.state)){
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        queue.offer(newNode);
 
-
+                    }
+                }
                 // retrieved
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
@@ -374,21 +388,7 @@ public class CoastGuard extends SearchProblem{
                         queue.offer(newNode);
                     }
                 }
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        queue.offer(newNode);
-
-                    }
-                }
-         //up
+                //up
                 if(nodeToExpand.state.guardX>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.UP);
                     Node newNode = new Node(newState, nodeToExpand, Operator.UP);
@@ -430,7 +430,6 @@ public class CoastGuard extends SearchProblem{
                         queue.offer(newNode);
                     }
                 }
-
             }
             else{
                 if(visualize){
@@ -466,6 +465,20 @@ public class CoastGuard extends SearchProblem{
             Node nodeToExpand = stack.pop();
             expanded+=1;
             if ((!goalTest(nodeToExpand.state))&& nodeToExpand.depth <= depth ){
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        stack.push(newNode);
+                    }
+
+                }
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
@@ -485,21 +498,6 @@ public class CoastGuard extends SearchProblem{
                         nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
                     State newState =DropOff(nodeToExpand.state, initState);
                     Node newNode = new Node(newState, nodeToExpand, Operator.DROP);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        stack.push(newNode);
-                    }
-
-                }
-
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP);
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -552,8 +550,6 @@ public class CoastGuard extends SearchProblem{
 
 
                 }
-
-
             }
             else if (goalTest(nodeToExpand.state)){
                 if(visualize){
@@ -607,12 +603,26 @@ public class CoastGuard extends SearchProblem{
             Node nodeToExpand = priorityQueue.poll();
             expanded+=1;
             if (!goalTest(nodeToExpand.state)){
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
 
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
                         nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0
-                &&nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
+                        &&nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                     State newState = retrieve(nodeToExpand.state);
                     maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
@@ -629,21 +639,6 @@ public class CoastGuard extends SearchProblem{
                     State newState =DropOff(nodeToExpand.state, initState);
                     maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
                     Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
-                }
-
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -698,7 +693,6 @@ public class CoastGuard extends SearchProblem{
 
                     }
                 }
-
             }
             else{
                 if(visualize){
@@ -733,6 +727,20 @@ public class CoastGuard extends SearchProblem{
             Node nodeToExpand = priorityQueue.poll();
             expanded+=1;
             if (!goalTest(nodeToExpand.state)){
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
@@ -754,21 +762,6 @@ public class CoastGuard extends SearchProblem{
                     State newState =DropOff(nodeToExpand.state, initState);
                     minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
                     Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
-                }
-
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -823,7 +816,6 @@ public class CoastGuard extends SearchProblem{
 
                     }
                 }
-
             }
             else{
                 if(visualize){
@@ -860,11 +852,26 @@ public class CoastGuard extends SearchProblem{
             Node nodeToExpand = priorityQueue.poll();
             expanded+=1;
             if (!goalTest(nodeToExpand.state)){
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),  pathCost(nodeToExpand,newState,initState));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
+
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
                         nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0
-                     && nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
+                        && nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).counter>0){
                     State newState = retrieve(nodeToExpand.state);
                     maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
                     Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),pathCost(nodeToExpand, newState,initState));
@@ -887,22 +894,6 @@ public class CoastGuard extends SearchProblem{
                         priorityQueue.offer(newNode);
                     }
                 }
-
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),  pathCost(nodeToExpand,newState,initState));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
-                }
-
                 //up
                 if(nodeToExpand.state.guardX>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.UP);
@@ -951,6 +942,8 @@ public class CoastGuard extends SearchProblem{
                         priorityQueue.offer(newNode);
                     }
                 }
+
+
             }
             else{
                 if(visualize){
@@ -984,6 +977,21 @@ public class CoastGuard extends SearchProblem{
          Node nodeToExpand = priorityQueue.poll();
          expanded+=1;
          if (!goalTest(nodeToExpand.state)){
+             //pickup
+             if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                     nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                     nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                     && nodeToExpand.state.spotsAvailable>0 ){
+                 State newState = pickUp(nodeToExpand.state);
+                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
+
+                 Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 String stringifiedState = stringify(newState);
+                 if (!visitedStates.contains(stringifiedState)){
+                     visitedStates.add(stringifiedState);
+                     priorityQueue.offer(newNode);
+                 }
+             }
              //retrieve
              if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                      nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
@@ -1005,21 +1013,6 @@ public class CoastGuard extends SearchProblem{
                  State newState =DropOff(nodeToExpand.state, initState);
                  minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
                  Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
-                 String stringifiedState = stringify(newState);
-                 if (!visitedStates.contains(stringifiedState)){
-                     visitedStates.add(stringifiedState);
-                     priorityQueue.offer(newNode);
-                 }
-             }
-             //pickup
-             if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                     nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                     nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                     && nodeToExpand.state.spotsAvailable>0 ){
-                 State newState = pickUp(nodeToExpand.state);
-                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
-
-                 Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
                  String stringifiedState = stringify(newState);
                  if (!visitedStates.contains(stringifiedState)){
                      visitedStates.add(stringifiedState);
@@ -1072,6 +1065,7 @@ public class CoastGuard extends SearchProblem{
                      priorityQueue.offer(newNode);
                   }
              }
+
          }
          else{
              if(visualize){
@@ -1109,10 +1103,23 @@ public class CoastGuard extends SearchProblem{
         String grid10= "10,6;59;1,7;0,0,2,2,3,0,5,3;1,3,69,3,4,80,4,7,94,4,9,14,5,2,39;";
 
 
-
-
-        String sol = solve(grid5,"AS2" , true);
+//String random =genGrid();
+//        System.out.println(random);
+        String sol = solve(grid1,"BF" , true);
+        System.out.println("BFS : "+sol);
+        sol = solve(grid1,"DF" , true);
+        System.out.println("DFS: "+sol);
+        sol = solve(grid1,"ID" , true);
+        System.out.println("ID: "+sol);
+        sol = solve(grid1,"GR1" , true);
+        System.out.println("GR1: "+sol);
+        sol = solve(grid1,"GR2" , true);
+        System.out.println("GR2: "+sol);
+        sol = solve(grid1,"AS1" , true);
+        System.out.println("AS1: "+sol);
+        sol = solve(grid1,"AS2" , true);
         System.out.println("AS2: "+sol);
+
 
 
     }
