@@ -19,7 +19,7 @@ public class Ship {
     }
     public void Update(){
 
-        if (aliveOnBoard==0 && counter>0){
+        if (aliveOnBoard == 0 && counter>0){
             counter --;
         }
         else{

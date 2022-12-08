@@ -54,92 +54,65 @@ public class CoastGuard extends SearchProblem{
         String [] gridSeparated = grid.split(";");
         String[] bounds = gridSeparated[0].split(",");
         int[][] matrix = new int[Integer.parseInt(bounds[1])][Integer.parseInt(bounds[0])];
-        System.out.println("my bounds are x= "+bounds[1]+" y = "+ bounds[0]);
-        int spotsAvailable = Integer.parseInt(gridSeparated[1]);
-        System.out.println("spots available on coast guard = "+ spotsAvailable);
-        bounds = gridSeparated[2].split(",");
+         int spotsAvailable = Integer.parseInt(gridSeparated[1]);
+         bounds = gridSeparated[2].split(",");
         int guardX =  Integer.parseInt(bounds[0]);
         int guardY =  Integer.parseInt(bounds[1]);
-        System.out.println("my agent is at x= "+bounds[0]+" y = "+ bounds[1]);
-        bounds = gridSeparated[3].split(",");
-        ArrayList<Integer> stations = new ArrayList<>();
-        for(int i = 0 ; i<bounds.length; i++) {
+         bounds = gridSeparated[3].split(",");
+         for(int i = 0 ; i<bounds.length; i++) {
             int x = Integer.parseInt(bounds[i]);
             int y = Integer.parseInt(bounds[++i]);
             matrix[x][y]=2;
-            stations.add(x);
-            stations.add(y);
-            System.out.println("station is at x = "+ x+" y = "+y);
-        }
+         }
         bounds = gridSeparated[4].split(",");
         HashMap<String,Ship> ships = new HashMap<>();
 
         int peopleToRescue = 0;
-        ArrayList<Integer> shipsLocations = new ArrayList<>();
-        for(int i = 0 ; i<bounds.length; i++) {
+         for(int i = 0 ; i<bounds.length; i++) {
             int x = Integer.parseInt(bounds[i]);
             int y = Integer.parseInt(bounds[++i]);
             matrix[x][y]=1;
             int capacity = Integer.parseInt(bounds[++i]);
             Ship ship = new Ship(capacity);
             ships.put(x+","+y,ship);
-            shipsLocations.add(x);
-            shipsLocations.add(y);
             peopleToRescue+=capacity;
-            System.out.println("ship is at x = "+ x+" y = "+y+" with capacity "+ capacity);
-        }
+         }
 
-        System.out.println("initially people to rescue in solve "+peopleToRescue);
-        State initState= new State(guardX,guardY,ships,spotsAvailable,peopleToRescue, ships.size(),0,0, ships.size());
+         State initState= new State(guardX,guardY,ships,spotsAvailable,peopleToRescue, ships.size(),0,0, ships.size());
 
         switch(strategy) {
             case "BF":
-              return BFS(matrix,initState,visualize);
+              return BFS(matrix,initState, visualize);
 
             case "DF":
-                return DFS(matrix,initState, Integer.MAX_VALUE);
+                return DFS(matrix,initState, Integer.MAX_VALUE, visualize);
 
             case "ID":
-                return IDS(matrix,initState);
+                return IDS(matrix,initState, visualize);
 
             case "GR1":
-                return GR1(matrix,initState,calcMinDist(shipsLocations,stations),visualize);
+                return GR1(matrix,initState, visualize);
 
             case "GR2":
-                return GR2(matrix,initState,shipsLocations, visualize);
+                return GR2(matrix,initState, visualize);
 
             case "AS1":
-                return AS1(matrix,initState,calcMinDist(shipsLocations,stations),visualize);
+                return AS1(matrix,initState, visualize);
 
             case "AS2":
-                return AS2(matrix,initState,shipsLocations, visualize);
+                return AS2(matrix,initState, visualize);
 
             default:
                return "";
         }
     }
-    // this is the function used as a helper method for the heuristic function it calculates the min dist
-    // between a ship and a station from all ships and stations
-    private static int calcMinDist(ArrayList<Integer> ships, ArrayList<Integer> stations){
-        int min = Integer.MAX_VALUE;
-        for(int i =0;i< ships.size();i+=2){
-            for(int j=0;j<stations.size();j+=2){
-                int xShip = ships.get(i);
-                int yShip = ships.get(i+1);
-                int xStation = stations.get(j);
-                int yStation = stations.get(j+1);
-                int distance = Math.abs(xShip-xStation)+Math.abs(yShip-yStation);
-                min = distance<min?distance:min;
-            }
-        }
-    return min;
-    }
+
     // a function that is used as a helper method to the heuristic function to calculate the minimum distance
     // between the coast guard and the closest ship that is still not wrecked
     // and also returns the number of people on the closest ship
-    private static int[] minDistGuardShip ( ArrayList<Integer> shipsLocations,HashMap<String,Ship> ships,int guardx, int guardy ){
+    private static int[] minDistGuardShip ( HashMap<String,Ship> ships,int guardx, int guardy ){
         int min = Integer.MAX_VALUE;
-        int people =0;
+        int max_people =Integer.MIN_VALUE;
         for (String key: ships.keySet()) {
             String[] loc = key.split(",");
             int xShip = Integer.parseInt(loc[0]);
@@ -147,12 +120,17 @@ public class CoastGuard extends SearchProblem{
             int distance = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
             if (distance < min){
                 min = distance;
-                people = ships.get(key).aliveOnBoard;
+                max_people = ships.get(key).aliveOnBoard;
+            }
+            else if(distance == min){
+                int people =ships.get(key).aliveOnBoard;
+
+                max_people = (people>max_people)? people:max_people;
             }
         }
-        return new int []{min,people};
+        return new int []{min,max_people};
     }
-    private static int[] maxPeopleNDistGuardShip ( ArrayList<Integer> shipsLocations,HashMap<String,Ship> ships,int guardx, int guardy ){
+    private static int[] maxPeopleNDistGuardShip (HashMap<String,Ship> ships,int guardx, int guardy){
         int max_people = Integer.MIN_VALUE;
         int dist =0;
         for (String key: ships.keySet()) {
@@ -165,63 +143,59 @@ public class CoastGuard extends SearchProblem{
                 dist = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
                 max_people= people;
             }
+            else if(people==max_people){
+                int xShip = Integer.parseInt(loc[0]);
+                int yShip = Integer.parseInt(loc[1]);
+                int dist2 = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
+                if(dist>dist2){
+                    dist=dist2;
+                }
+            }
 
 
         }
         return new int []{max_people,dist};
-    }
-
-
-
-//    This heuristic approximates the cost to a goal state based on the number of pickups that need to be done
-//    in the best case. The number of pickups is multiplied by the shortest path (roudtrip) between a ship and station.
-private static int calcHeuristic1( int peopleToRescue, int capacity, int minDistance){
-    int roundTrips = (int)Math.ceil((double)peopleToRescue/(double)capacity);
-    System.out.println( "round trips"+roundTrips);
-    System.out.println( "Min Distance "+minDistance);
-    int costDeath=0;
-    int aliveCount=peopleToRescue;
-
-    if(roundTrips==1){
-        return 0;
-    }
-    for(int i=roundTrips-1;i>0;i--){
-        if(aliveCount<=0){
-            break;
-        }
-        aliveCount = aliveCount-capacity;
-        costDeath += 2*minDistance ;
-        aliveCount = aliveCount - 2*minDistance;
-    }
-    return costDeath;
-
  }
 
-    private static int calcHeuristic2(int peopleToRescue,int peopleDied,int minDistGuardShipsToMax, int maxPeople){
-
-        if(maxPeople< minDistGuardShipsToMax)   {
-            return maxPeople;
+ private static int calcHeuristic1(int peopleToRescue,int minDistGuardShipsToMax, int maxPeople){
+        int deadCount= 0;
+        if(maxPeople<= minDistGuardShipsToMax)   {
+            deadCount+= maxPeople;
+        }
+        else{
+            deadCount+= minDistGuardShipsToMax;
         }
         if (peopleToRescue-maxPeople<=minDistGuardShipsToMax){
-            return peopleToRescue-maxPeople;
+            deadCount+= peopleToRescue-maxPeople;
+        }
+        else{
+            deadCount+= minDistGuardShipsToMax;
         }
 
-        return minDistGuardShipsToMax*peopleDied;
-
+        return deadCount;
     }
     //this heuristic approximates the number of deaths by calculating the min number odf steps to the closest ship and
     //the closest ship .. this heuristic handles the two cases if all the people alive in the situation is less than
     // what is calculated to die in this way to the minimum distance and the other case if the other ships has less than
     // what it calculates the deaths to be
-    private static int calcHeuristic3(int peopleToRescue,int peopleDied,int minDistGuardShips, int peopleOnMin){
-        if(peopleToRescue< minDistGuardShips*peopleDied)   {
-            return peopleToRescue;
+    private static int calcHeuristic2(int peopleToRescue,int minDistGuardShips, int peopleOnMin){
+        int peopleDead = 0;
+
+        if(peopleOnMin < minDistGuardShips)   {
+            peopleDead+=peopleOnMin;
         }
-        if (peopleToRescue-peopleOnMin<=minDistGuardShips*(peopleDied-1)){
-            return peopleToRescue-peopleOnMin;
+        else{
+            peopleDead+=minDistGuardShips;
+        }
+        if (peopleToRescue-peopleOnMin< minDistGuardShips){
+            peopleDead+=(peopleToRescue-peopleOnMin);
+        }
+        else{
+            peopleDead+=minDistGuardShips;
         }
 
-        return minDistGuardShips*peopleDied;
+        return peopleDead;
+
     }
 //this is a helper function that updates the state if the agent moved in any direction
     private static State updateMoving(State nodeToExpandState,Operator operator){
@@ -244,11 +218,10 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
             else{
                 boxesLost++;
             }
-            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
+
         }
         int guardX = nodeToExpandState.guardX;
         int guardY = nodeToExpandState.guardY;
-        System.out.println("ANA delwa2ty ha move we ana aslun fe x: "+ guardX +" y: "+ guardY);
         switch (operator){
             case UP: guardX--;break;
             case DOWN: guardX++; break;
@@ -279,7 +252,6 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
             else{
                 boxesLost++;
             }
-            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
         }
 
         State newState = new State(nodeToExpandState.guardX, nodeToExpandState.guardY, myships,
@@ -314,7 +286,6 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                     boxesLost++;
                 }
             }
-            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
         }
 
         State newState = new State(nodeToExpandState.guardX, nodeToExpandState.guardY, myships,
@@ -355,7 +326,6 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                 boxesLost++;
 
             }
-            System.out.println("alive on board koll marra :"+ newShip.aliveOnBoard);
         }
 
         State newState = new State(nodeToExpandState.guardX, nodeToExpandState.guardY, myships,
@@ -369,71 +339,17 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
 // function that implements bfs by enqueuing every expansion after checking for redundancy in the queue then upon
 // popping checking if it's the goal state
     private static String BFS(int[][] matrix, State initState,boolean visualize){
+        int expanded =0;
         HashSet<String> visitedStates = new HashSet<>();
         Queue<Node> queue = new LinkedList<>();
         Node initNode = new Node (initState,null,null);
         queue.offer(initNode);
         while (!queue.isEmpty()) {
             Node nodeToExpand = queue.poll();
+            expanded+=1;
             if (!goalTest(nodeToExpand.state)){
-                //up
-                if(nodeToExpand.state.guardX>0){
-                    State newState = updateMoving(nodeToExpand.state,Operator.UP);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.UP);
-                   String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        queue.offer(newNode);
-                        System.out.println("up");
-                    }
 
-                }
-                //down
-                if(nodeToExpand.state.guardX<matrix.length-1){
-                    State newState = updateMoving(nodeToExpand.state,Operator.DOWN);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.DOWN);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        queue.offer(newNode);
-                        System.out.println("down");
-                    }
 
-                }
-                //right
-                if(nodeToExpand.state.guardY<matrix[0].length-1){
-                    State newState = updateMoving(nodeToExpand.state,Operator.RIGHT);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        queue.offer(newNode);
-                        System.out.println("right");
-                    }
-                }
-                //left
-                if(nodeToExpand.state.guardY>0){
-                    State newState = updateMoving(nodeToExpand.state,Operator.LEFT);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        queue.offer(newNode);
-                        System.out.println("left");
-                    }
-                }
-                // drop off
-                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
-                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
-                    State newState =DropOff(nodeToExpand.state, initState);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        queue.offer(newNode);
-                        System.out.println("drop off");
-                    }
-                }
                 // retrieved
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
@@ -445,8 +361,17 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                         visitedStates.add(stringifiedState);
                         queue.offer(newNode);
 
+                    }}
+                // drop off
+                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
+                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
+                    State newState =DropOff(nodeToExpand.state, initState);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        queue.offer(newNode);
                     }
-
                 }
                 //pickup
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
@@ -462,22 +387,64 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
 
                     }
                 }
+         //up
+                if(nodeToExpand.state.guardX>0){
+                    State newState = updateMoving(nodeToExpand.state,Operator.UP);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.UP);
+                   String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        queue.offer(newNode);
+                    }
+
+                }
+                //down
+                if(nodeToExpand.state.guardX<matrix.length-1){
+                    State newState = updateMoving(nodeToExpand.state,Operator.DOWN);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DOWN);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        queue.offer(newNode);
+                    }
+
+                }
+                //right
+                if(nodeToExpand.state.guardY<matrix[0].length-1){
+                    State newState = updateMoving(nodeToExpand.state,Operator.RIGHT);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        queue.offer(newNode);
+                    }
+                }
+                //left
+                if(nodeToExpand.state.guardY>0){
+                    State newState = updateMoving(nodeToExpand.state,Operator.LEFT);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        queue.offer(newNode);
+                    }
+                }
+
             }
             else{
-                visualize(matrix,nodeToExpand);
+                if(visualize){
+                    visualize(matrix,nodeToExpand);
+                }
                 StringBuilder solution = new StringBuilder();
                 int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
                 int retrieved = nodeToExpand.state.boxesRetrieved;
-                int nodes = 0;
-                System.out.println("deaths = " +deaths+ "initialState people to rescue ="+ initState.peopleToRescue+ "final rescued ="+ nodeToExpand.state.peopleRescued);
-                while(nodeToExpand.parent!=null){
 
-                    solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
-                    nodes++;
-                    nodeToExpand= nodeToExpand.parent;
+                 while(nodeToExpand.parent!=null){
+                     solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
+                     nodeToExpand= nodeToExpand.parent;
                 }
                 solution.replace(solution.length()-1,solution.length(),";");
-                solution.append(deaths+";"+retrieved+";"+nodes);
+                solution.append(deaths+";"+retrieved+";"+expanded);
                 return String.valueOf(solution);
 
             }
@@ -488,14 +455,56 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
     // then upon popping checking if it's the goal state.. This function also takes max depth as a parameter
     // to be used a sa helper method for the iterative Iterative depth search in which the depth is the maximum depth for the iteration..
     // for normal DFS the Depth is an Integer.MAX
-    private static String DFS(int[][] matrix, State initState, int depth){
+    private static String DFS(int[][] matrix, State initState, int depth, boolean visualize){
+        int expanded = 0;
         HashSet<String> visitedStates = new HashSet<>();
         Stack<Node> stack = new Stack<>();
         Node initNode = new Node (initState,null,null);
         stack.push(initNode);
         while (!stack.isEmpty()) {
             Node nodeToExpand = stack.pop();
+            expanded+=1;
             if ((!goalTest(nodeToExpand.state))&& nodeToExpand.depth <= depth ){
+                //retrieve
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                    State newState = retrieve(nodeToExpand.state);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        stack.push(newNode);
+                    }
+
+                }
+                // drop off
+                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
+                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
+                    State newState =DropOff(nodeToExpand.state, initState);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        stack.push(newNode);
+                    }
+
+                }
+
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP);
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        stack.push(newNode);
+                    }
+
+                }
                 //up
                 if(nodeToExpand.state.guardX>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.UP);
@@ -541,63 +550,24 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
 
 
                 }
-                // drop off
-                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
-                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
-                    State newState =DropOff(nodeToExpand.state, initState);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        stack.push(newNode);
-                    }
-
-                }
-               //retrieve
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
-                    State newState = retrieve(nodeToExpand.state);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                       stack.push(newNode);
-                    }
-
-                }
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP);
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        stack.push(newNode);
-                    }
-
-                }
 
 
             }
             else if (goalTest(nodeToExpand.state)){
+                if(visualize){
+                    visualize(matrix,nodeToExpand);
+                }
                 //plan;deaths;retrieved;nodes
                 StringBuilder solution = new StringBuilder();
                 int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
                 int retrieved = nodeToExpand.state.boxesRetrieved;
-                int nodes = 0;
-                System.out.println("deaths = " +deaths+ "initialState people to rescue ="+ initState.peopleToRescue+ "final rescued ="+ nodeToExpand.state.peopleRescued);
-                while(nodeToExpand.parent!=null){
 
-                    solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
-                    nodes++;
-                    nodeToExpand= nodeToExpand.parent;
+                 while(nodeToExpand.parent!=null){
+                     solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
+                     nodeToExpand= nodeToExpand.parent;
                 }
                 solution.replace(solution.length()-1,solution.length(),";");
-                solution.append(deaths+";"+retrieved+";"+nodes);
+                solution.append(deaths+";"+retrieved+";"+expanded);
                 return String.valueOf(solution);
 
             }
@@ -610,10 +580,10 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
     }
 //This the function that implements the iterative depth search it loops with an increment of depth by 7
 // if it didn't reach the goal state in the past iteration and pass the depth parameter to the DFS function
-    private static String IDS(int[][] matrix, State initState){
+    private static String IDS(int[][] matrix, State initState, boolean visualize){
 
         for( int limit= 0; limit< Integer.MAX_VALUE; limit+=7){
-            String answer = DFS(matrix,initState,limit);
+            String answer = DFS(matrix,initState,limit, visualize);
             if (answer.length()!=0){
                 return answer;
             }
@@ -623,19 +593,65 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
     }
     //A function that implements the greedy heuristic no.1 it uses a priority queue for Nodes and it takes the minimum
     // distance between a ship and a station as a parameter because it's used in the heuristic
-    private static String GR1(int[][] matrix, State initState,int minDist,boolean visualize){
+    private static String GR1(int[][] matrix, State initState,boolean visualize){
+
+        int expanded =0;
         PriorityQueue<Node> priorityQueue = new PriorityQueue<>();
         HashSet<String> visitedStates = new HashSet<>();
-        Node initNode = new Node (initState,null,null,calcHeuristic1(initState.peopleToRescue,initState.spotsAvailable,minDist));
+        int [] maxShip= maxPeopleNDistGuardShip (initState.ships,initState.guardX, initState.guardY );
+        Node initNode = new Node (initState,null,null,calcHeuristic1(initState.peopleToRescue,maxShip[1], maxShip[0]));
         priorityQueue.offer(initNode);
         while (!priorityQueue.isEmpty()) {
             Node nodeToExpand = priorityQueue.poll();
+            expanded+=1;
             if (!goalTest(nodeToExpand.state)){
+
+                //retrieve
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                    State newState = retrieve(nodeToExpand.state);
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+
+                }
+                // drop off
+                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
+                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
+                    State newState =DropOff(nodeToExpand.state, initState);
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
+
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
                 //up
                 if(nodeToExpand.state.guardX>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.UP);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                      Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic1(newState.peopleToRescue,initState.spotsAvailable,minDist));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -646,8 +662,8 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                  //down
                 if(nodeToExpand.state.guardX<matrix.length-1){
                     State newState = updateMoving(nodeToExpand.state,Operator.DOWN);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                      Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -659,8 +675,8 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                 //right
                 if(nodeToExpand.state.guardY<matrix[0].length-1){
                     State newState = updateMoving(nodeToExpand.state,Operator.RIGHT);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                      Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -670,8 +686,8 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                 //left
                 if(nodeToExpand.state.guardY>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.LEFT);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -679,64 +695,22 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
 
                     }
                 }
-                // drop off
-                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
-                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
-                    State newState =DropOff(nodeToExpand.state, initState);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                      Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
-                }
-                //retrieve
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
-                    State newState = retrieve(nodeToExpand.state);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
 
-                }
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
-                }
             }
             else{
-                if(visualize==true){
+                if(visualize){
                     visualize(matrix,nodeToExpand);
                 }
                 StringBuilder solution = new StringBuilder();
                 int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
                 int retrieved = nodeToExpand.state.boxesRetrieved;
-                int nodes = 0;
-                System.out.println("deaths = " +deaths+ "initialState people to rescue ="+ initState.peopleToRescue+ "final rescued ="+ nodeToExpand.state.peopleRescued);
-                while(nodeToExpand.parent!=null){
 
-                    solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
-                    nodes++;
-                    nodeToExpand= nodeToExpand.parent;
+                 while(nodeToExpand.parent!=null){
+                     solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
+                     nodeToExpand= nodeToExpand.parent;
                 }
                 solution.replace(solution.length()-1,solution.length(),";");
-                solution.append(deaths+";"+retrieved+";"+nodes);
+                solution.append(deaths+";"+retrieved+";"+expanded);
                 return String.valueOf(solution);
 
             }
@@ -745,21 +719,63 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
     }
     //A function that implements the greedy heuristic no.2 it uses a priority queue for Nodes and it takes the minimum
     // distance between a ship and a station as a parameter because it's used in the heuristic
-    private static String GR2(int[][] matrix, State initState,ArrayList<Integer> shipsLocations, boolean visualize){
+    private static String GR2(int[][] matrix, State initState, boolean visualize){
+       int expanded = 0;
         PriorityQueue<Node> priorityQueue = new PriorityQueue<>();
         HashSet<String> visitedStates = new HashSet<>();
-        int [] minDist = minDistGuardShip(shipsLocations,initState.ships, initState.guardX,initState.guardY);
-        Node initNode = new Node (initState,null,null,calcHeuristic3(initState.peopleToRescue,0, minDist[0],minDist[1]));
+        int [] minDist = minDistGuardShip(initState.ships, initState.guardX,initState.guardY);
+        Node initNode = new Node (initState,null,null,calcHeuristic2(initState.peopleToRescue, minDist[0],minDist[1]));
         priorityQueue.offer(initNode);
         while (!priorityQueue.isEmpty()) {
             Node nodeToExpand = priorityQueue.poll();
+            expanded+=1;
             if (!goalTest(nodeToExpand.state)){
+                //retrieve
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
+                    State newState = retrieve(nodeToExpand.state);
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+
+                }
+                // drop off
+                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
+                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
+                    State newState =DropOff(nodeToExpand.state, initState);
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
+
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
                 //up
                 if(nodeToExpand.state.guardX>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.UP);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic3(newState.peopleToRescue, initState.spotsAvailable,minDist[0], minDist[1]));
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -770,9 +786,8 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                 //down
                 if(nodeToExpand.state.guardX<matrix.length-1){
                     State newState = updateMoving(nodeToExpand.state,Operator.DOWN);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic3(newState.peopleToRescue, initState.spotsAvailable,minDist[0],minDist[1]));
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -784,9 +799,8 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                 //right
                 if(nodeToExpand.state.guardY<matrix[0].length-1){
                     State newState = updateMoving(nodeToExpand.state,Operator.RIGHT);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic3(newState.peopleToRescue, initState.spotsAvailable,minDist[0],minDist[1]));
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0],minDist[1]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -796,9 +810,8 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                 //left
                 if(nodeToExpand.state.guardY>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.LEFT);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic3(newState.peopleToRescue, initState.spotsAvailable,minDist[0], minDist[1]));
+                    minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -806,115 +819,63 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
 
                     }
                 }
-                // drop off
-                if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
-                        nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
-                    State newState =DropOff(nodeToExpand.state, initState);
-                    minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic3(newState.peopleToRescue, initState.spotsAvailable,minDist[0],minDist[1]));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
+
+            }
+            else{
+                if(visualize){
+                  visualize(matrix,nodeToExpand);
                 }
+                StringBuilder solution = new StringBuilder();
+                int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
+                int retrieved = nodeToExpand.state.boxesRetrieved;
+                 while(nodeToExpand.parent!=null){
+                    solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
+                    nodeToExpand= nodeToExpand.parent;
+                }
+                solution.replace(solution.length()-1,solution.length(),";");
+                solution.append(deaths+";"+retrieved+";"+expanded);
+                return String.valueOf(solution);
+
+            }
+        }
+        return "";
+
+    }
+
+
+
+//    function that implements A* search using the first heuristic and the path cost
+    private static String AS1(int[][] matrix,  State initState,  boolean visualize){
+       int expanded = 0;
+        PriorityQueue<Node> priorityQueue = new PriorityQueue<>();
+        HashSet<String> visitedStates = new HashSet<>();
+        int [] maxShip= maxPeopleNDistGuardShip (initState.ships,initState.guardX, initState.guardY );
+        Node initNode = new Node (initState,null,null,calcHeuristic1(initState.peopleToRescue,maxShip[1], maxShip[0]));
+        priorityQueue.offer(initNode);
+        while (!priorityQueue.isEmpty()) {
+            Node nodeToExpand = priorityQueue.poll();
+            expanded+=1;
+            if (!goalTest(nodeToExpand.state)){
                 //retrieve
                 if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                         nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
                         nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
                     State newState = retrieve(nodeToExpand.state);
-                    minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic3(newState.peopleToRescue, initState.spotsAvailable,minDist[0],minDist[1]));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),pathCost(nodeToExpand, newState,initState));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
                         priorityQueue.offer(newNode);
                     }
 
-                }
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic3(newState.peopleToRescue, initState.spotsAvailable,minDist[0],minDist[1]));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
-                }
-            }
-            else{
-                if(visualize==true){
-                    visualize(matrix,nodeToExpand);
-                }
-                StringBuilder solution = new StringBuilder();
-                int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
-                int retrieved = nodeToExpand.state.boxesRetrieved;
-                int nodes = 0;
-                System.out.println("deaths = " +deaths+ "initialState people to rescue ="+ initState.peopleToRescue+ "final rescued ="+ nodeToExpand.state.peopleRescued);
-                while(nodeToExpand.parent!=null){
-
-                    solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
-                    nodes++;
-                    nodeToExpand= nodeToExpand.parent;
-                }
-                solution.replace(solution.length()-1,solution.length(),";");
-                solution.append(deaths+";"+retrieved+";"+nodes);
-                return String.valueOf(solution);
-
-            }
-        }
-        return "";
-
-    }
-    //function that implements A* search using the first heuristic and the path cost
-    private static String AS1(int[][] matrix,  State initState, int minDist, boolean visualize){
-
-        PriorityQueue<Node> priorityQueue = new PriorityQueue<>();
-        HashSet<String> visitedStates = new HashSet<>();
-        Node initNode = new Node (initState,null,null,calcHeuristic1(initState.peopleToRescue,initState.spotsAvailable,minDist));
-        priorityQueue.offer(initNode);
-        while (!priorityQueue.isEmpty()) {
-            Node nodeToExpand = priorityQueue.poll();
-            if (!goalTest(nodeToExpand.state)){
-
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
-                    State newState = retrieve(nodeToExpand.state);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist),pathCost(nodeToExpand, newState,initState));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
-
-                }
-                //pickup
-                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
-                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
-                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
-                        && nodeToExpand.state.spotsAvailable>0 ){
-                    State newState = pickUp(nodeToExpand.state);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist),  pathCost(nodeToExpand,newState,initState));
-                    String stringifiedState = stringify(newState);
-                    if (!visitedStates.contains(stringifiedState)){
-                        visitedStates.add(stringifiedState);
-                        priorityQueue.offer(newNode);
-                    }
                 }
                 // drop off
                 if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
                         nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
                     State newState =DropOff(nodeToExpand.state, initState);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist),pathCost(nodeToExpand, newState,initState));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),pathCost(nodeToExpand, newState,initState));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -922,10 +883,26 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                     }
                 }
 
+                //pickup
+                if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
+                        nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
+                        nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
+                        && nodeToExpand.state.spotsAvailable>0 ){
+                    State newState = pickUp(nodeToExpand.state);
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),  pathCost(nodeToExpand,newState,initState));
+                    String stringifiedState = stringify(newState);
+                    if (!visitedStates.contains(stringifiedState)){
+                        visitedStates.add(stringifiedState);
+                        priorityQueue.offer(newNode);
+                    }
+                }
+
+                //up
                 if(nodeToExpand.state.guardX>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.UP);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                    Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist), pathCost(nodeToExpand,newState,initState));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]), pathCost(nodeToExpand,newState,initState));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -934,11 +911,11 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                     }
 
                 }
-
+//down
                 if(nodeToExpand.state.guardX<matrix.length-1){
                     State newState = updateMoving(nodeToExpand.state,Operator.DOWN);
-                    int died = initState.peopleToRescue-newState.peopleRescued-newState.peopleToRescue;
-                     Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist), pathCost(nodeToExpand, newState,initState) );
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]), pathCost(nodeToExpand, newState,initState) );
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -946,10 +923,11 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                     }
 
                 }
-
+//right
                 if(nodeToExpand.state.guardY<matrix[0].length-1){
                     State newState = updateMoving(nodeToExpand.state,Operator.RIGHT);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist),pathCost(nodeToExpand, newState,initState));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),pathCost(nodeToExpand, newState,initState));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
@@ -957,67 +935,75 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
 
                     }
                 }
+                //left
                 if(nodeToExpand.state.guardY>0){
                     State newState = updateMoving(nodeToExpand.state,Operator.LEFT);
-                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic1(newState.peopleToRescue, initState.spotsAvailable,minDist),pathCost(nodeToExpand, newState,initState));
+                    maxShip= maxPeopleNDistGuardShip (newState.ships,newState.guardX, newState.guardY );
+                    Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic1((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),maxShip[1], maxShip[0]),pathCost(nodeToExpand, newState,initState));
                     String stringifiedState = stringify(newState);
                     if (!visitedStates.contains(stringifiedState)){
                         visitedStates.add(stringifiedState);
                         priorityQueue.offer(newNode);
                     }
                 }
-
-
-
-
             }
             else{
-                if(visualize==true){
+                if(visualize){
                     visualize(matrix,nodeToExpand);
                 }
                 StringBuilder solution = new StringBuilder();
                 int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
                 int retrieved = nodeToExpand.state.boxesRetrieved;
-                int nodes = 0;
-                System.out.println("deaths = " +deaths+ "initialState people to rescue ="+ initState.peopleToRescue+ "final rescued ="+ nodeToExpand.state.peopleRescued);
                 while(nodeToExpand.parent!=null){
-
                     solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
-                    nodes++;
                     nodeToExpand= nodeToExpand.parent;
                 }
                 solution.replace(solution.length()-1,solution.length(),";");
-                solution.append(deaths+";"+retrieved+";"+nodes);
+                solution.append(deaths+";"+retrieved+";"+expanded);
                 return String.valueOf(solution);
 
             }
         }
         return "";
-    }
+}
 
 
- private static String AS2(int[][] matrix, State initState,ArrayList<Integer> shipsLocations, boolean visualize){
-     PriorityQueue<Node> priorityQueue = new PriorityQueue<>();
+ private static String AS2(int[][] matrix, State initState, boolean visualize){
+        int expanded  = 0;
+        PriorityQueue<Node> priorityQueue = new PriorityQueue<>();
      HashSet<String> visitedStates = new HashSet<>();
-     int [] minDist = minDistGuardShip(shipsLocations,initState.ships, initState.guardX,initState.guardY);
-     Node initNode = new Node (initState,null,null,calcHeuristic3(initState.peopleToRescue,0,minDist[0], minDist[1]));
+     int [] minDist = minDistGuardShip( initState.ships, initState.guardX,initState.guardY);
+     Node initNode = new Node (initState,null,null,calcHeuristic2(initState.peopleToRescue,minDist[0], minDist[1]));
      priorityQueue.offer(initNode);
      while (!priorityQueue.isEmpty()) {
          Node nodeToExpand = priorityQueue.poll();
+         expanded+=1;
          if (!goalTest(nodeToExpand.state)){
+             //retrieve
              if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
                      nodeToExpand.state.ships.containsKey(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY) &&
                      nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard<=0){
                  State newState = retrieve(nodeToExpand.state);
-                 minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                 Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic3(newState.peopleToRescue, newState.shipsWithPpl,minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
+                 Node newNode = new Node(newState, nodeToExpand, Operator.RETRIEVE,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
                  String stringifiedState = stringify(newState);
                  if (!visitedStates.contains(stringifiedState)){
                      visitedStates.add(stringifiedState);
                      priorityQueue.offer(newNode);
-                     System.out.println("retreived");
                  }
 
+             }
+             // drop off
+             if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
+                     nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
+                 State newState =DropOff(nodeToExpand.state, initState);
+                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
+                 Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 String stringifiedState = stringify(newState);
+                 if (!visitedStates.contains(stringifiedState)){
+                     visitedStates.add(stringifiedState);
+                     priorityQueue.offer(newNode);
+                 }
              }
              //pickup
              if (matrix[nodeToExpand.state.guardX][nodeToExpand.state.guardY]==1 &&
@@ -1025,97 +1011,75 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
                      nodeToExpand.state.ships.get(nodeToExpand.state.guardX+","+nodeToExpand.state.guardY).aliveOnBoard>0
                      && nodeToExpand.state.spotsAvailable>0 ){
                  State newState = pickUp(nodeToExpand.state);
-                 minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
+                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
 
-                 Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic3(newState.peopleToRescue, newState.shipsWithPpl,minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 Node newNode = new Node(newState, nodeToExpand, Operator.PICKUP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
                  String stringifiedState = stringify(newState);
                  if (!visitedStates.contains(stringifiedState)){
                      visitedStates.add(stringifiedState);
                      priorityQueue.offer(newNode);
-                     System.out.println("pickedUp");
                  }
              }
-             // drop off
-             if (matrix[nodeToExpand.state.guardX] [nodeToExpand.state.guardY]==2 &&
-                     nodeToExpand.state.spotsAvailable<initState.spotsAvailable){
-                 State newState =DropOff(nodeToExpand.state, initState);
-                 minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                 Node newNode = new Node(newState, nodeToExpand, Operator.DROP,calcHeuristic3(newState.peopleToRescue,newState.shipsWithPpl,minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
-                 String stringifiedState = stringify(newState);
-                 if (!visitedStates.contains(stringifiedState)){
-                     visitedStates.add(stringifiedState);
-                     priorityQueue.offer(newNode);
-                     System.out.println("drop off");
-                 }
-             }
-
+             //up
              if(nodeToExpand.state.guardX>0){
                  State newState = updateMoving(nodeToExpand.state,Operator.UP);
-                 minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                 Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic3(newState.peopleToRescue,newState.shipsWithPpl, minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
+                 Node newNode = new Node(newState, nodeToExpand, Operator.UP,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
                  String stringifiedState = stringify(newState);
                  if (!visitedStates.contains(stringifiedState)){
                      visitedStates.add(stringifiedState);
                      priorityQueue.offer(newNode);
-                     System.out.println("up");
-                 }
+                  }
 
              }
-
+//down
              if(nodeToExpand.state.guardX<matrix.length-1){
                  State newState = updateMoving(nodeToExpand.state,Operator.DOWN);
-                 minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                 Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic3(newState.peopleToRescue,newState.shipsWithPpl, minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
+                 Node newNode = new Node(newState, nodeToExpand, Operator.DOWN,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
                  String stringifiedState = stringify(newState);
                  if (!visitedStates.contains(stringifiedState)){
                      visitedStates.add(stringifiedState);
                      priorityQueue.offer(newNode);
-                     System.out.println("down");
-                 }
+                  }
 
              }
-
+//right
              if(nodeToExpand.state.guardY<matrix[0].length-1){
                  State newState = updateMoving(nodeToExpand.state,Operator.RIGHT);
-                 minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                 Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic3(newState.peopleToRescue,newState.shipsWithPpl,minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 minDist = minDistGuardShip( newState.ships ,newState.guardX,newState.guardY);
+                 Node newNode = new Node(newState, nodeToExpand, Operator.RIGHT,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
                  String stringifiedState = stringify(newState);
                  if (!visitedStates.contains(stringifiedState)){
                      visitedStates.add(stringifiedState);
                      priorityQueue.offer(newNode);
-                     System.out.println("right");
-                 }
+                  }
              }
+             //left
              if(nodeToExpand.state.guardY>0){
                  State newState = updateMoving(nodeToExpand.state,Operator.LEFT);
-                 minDist = minDistGuardShip(shipsLocations,newState.ships ,newState.guardX,newState.guardY);
-                 Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic3(newState.peopleToRescue, newState.shipsWithPpl,minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
+                 minDist = minDistGuardShip(newState.ships ,newState.guardX,newState.guardY);
+                 Node newNode = new Node(newState, nodeToExpand, Operator.LEFT,calcHeuristic2((newState.peopleToRescue-(initState.spotsAvailable- newState.spotsAvailable)),minDist[0], minDist[1]),pathCost(nodeToExpand, newState, initState));
                  String stringifiedState = stringify(newState);
                  if (!visitedStates.contains(stringifiedState)){
                      visitedStates.add(stringifiedState);
                      priorityQueue.offer(newNode);
-                     System.out.println("left");
-                 }
+                  }
              }
-
-
-
-
          }
          else{
+             if(visualize){
+                 visualize(matrix,nodeToExpand);
+             }
              StringBuilder solution = new StringBuilder();
              int deaths = initState.peopleToRescue-nodeToExpand.state.peopleRescued;
              int retrieved = nodeToExpand.state.boxesRetrieved;
-             int nodes = 0;
-             System.out.println("deaths = " +deaths+ "initialState people to rescue = "+ initState.peopleToRescue+ "final rescued = "+ nodeToExpand.state.peopleRescued);
              while(nodeToExpand.parent!=null){
-
                  solution.insert(0,nodeToExpand.operator.toString().toLowerCase()+",");
-                 nodes++;
                  nodeToExpand= nodeToExpand.parent;
              }
              solution.replace(solution.length()-1,solution.length(),";");
-             solution.append(deaths+";"+retrieved+";"+nodes);
+             solution.append(deaths+";"+retrieved+";"+expanded);
              return String.valueOf(solution);
 
          }
@@ -1138,9 +1102,12 @@ private static int calcHeuristic1( int peopleToRescue, int capacity, int minDist
         String grid9 = "7,5;100;3,4;2,6,3,5;0,0,4,0,1,8,1,4,77,1,5,1,3,2,94,4,3,46;";
         String grid10= "10,6;59;1,7;0,0,2,2,3,0,5,3;1,3,69,3,4,80,4,7,94,4,9,14,5,2,39;";
 
-       String sol = solve(grid10,"AS1 " , true);
-       System.out.println(sol);
-       // visualize(new int[5][5]);
+
+
+
+        String sol = solve(grid5,"AS2" , true);
+        System.out.println("AS2: "+sol);
+
 
     }
     public static String  stringify (State myState){
