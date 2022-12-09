@@ -112,103 +112,6 @@ public class CoastGuard extends SearchProblem{
                return "";
         }
     }
-
-    // a function that is used as a helper method to the heuristic function to calculate the minimum distance
-    // between the coast guard and the closest ship that is still not wrecked
-    // and also returns the number of people on the closest ship
-    private static int[] minDistGuardShip ( HashMap<String,Ship> ships,int guardx, int guardy ){
-        int min = Integer.MAX_VALUE;
-        int max_people =Integer.MIN_VALUE;
-        for (String key: ships.keySet()) {
-            String[] loc = key.split(",");
-            int xShip = Integer.parseInt(loc[0]);
-            int yShip = Integer.parseInt(loc[1]);
-            int distance = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
-            if (distance < min){
-                min = distance;
-                max_people = ships.get(key).aliveOnBoard;
-            }
-            else if(distance == min){
-                int people =ships.get(key).aliveOnBoard;
-
-                max_people = (people>max_people)? people:max_people;
-            }
-        }
-        return new int []{min,max_people};
-    }
-    // a function that is used as a helper method to the heuristic function to calculate the minimum distance
-    // between the coast guard and the closest ship with maximum people count that is still not wrecked
-    // and also returns the number of people on the closest maximum ship
-    private static int[] maxPeopleNDistGuardShip (HashMap<String,Ship> ships,int guardx, int guardy){
-        int max_people = Integer.MIN_VALUE;
-        int dist =0;
-        for (String key: ships.keySet()) {
-            String[] loc = key.split(",");
-            int people= ships.get(key).aliveOnBoard;
-
-            if (people> max_people){
-                int xShip = Integer.parseInt(loc[0]);
-                int yShip = Integer.parseInt(loc[1]);
-                dist = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
-                max_people= people;
-            }
-            else if(people==max_people){
-                int xShip = Integer.parseInt(loc[0]);
-                int yShip = Integer.parseInt(loc[1]);
-                int dist2 = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
-                if(dist>dist2){
-                    dist=dist2;
-                }
-            }
-
-
-        }
-        return new int []{max_people,dist};
- }
-    //Heuristic for GR1 and AS1
-    //this heuristic approximates the number of deaths by calculating the manhattan distance between the coast guard and the closest
-    //ship with maximum number of passengers. The function then approximates the number of people that will die in that distance
- private static int calcHeuristic1(int peopleToRescue,int minDistGuardShipsToMax, int maxPeople){
-        int deadCount= 0;
-        if(maxPeople<= minDistGuardShipsToMax)   {
-            deadCount+= maxPeople;
-        }
-        else{
-            deadCount+= minDistGuardShipsToMax;
-        }
-        if (peopleToRescue-maxPeople<=minDistGuardShipsToMax){
-            deadCount+= peopleToRescue-maxPeople;
-        }
-        else{
-            deadCount+= minDistGuardShipsToMax;
-        }
-
-        return deadCount;
-
-
-    }
-    //Heuristic for GR2 and AS2
-    //this heuristic approximates the number of deaths by calculating the manhattan distance between the coast guard and the closest
-    //ship. The function then approximates the number of people that will die in that distance
-    private static int calcHeuristic2(int peopleToRescue,int minDistGuardShips, int peopleOnMin){
-        int peopleDead = 0;
-
-        if(peopleOnMin < minDistGuardShips)   {
-            peopleDead+=peopleOnMin;
-        }
-        else{
-            peopleDead+=minDistGuardShips;
-        }
-        if (peopleToRescue-peopleOnMin< minDistGuardShips){
-            peopleDead+=(peopleToRescue-peopleOnMin);
-        }
-        else{
-            peopleDead+=minDistGuardShips;
-        }
-
-        return peopleDead;
-
-    }
     //this is a helper function used by all functions performing a search stategy to expand nodes for moving states
     //(UP,DOWN,LEFT,RIGHT)
     //It takes the node to be expanded and the operator to apply and returns the state resulting from expanding that node
@@ -249,7 +152,7 @@ public class CoastGuard extends SearchProblem{
                 nodeToExpandState.boxesRetrieved, shipsWithPeopleAlive);
         return newState;
     }
-    //this is a helper function used by all functions performing a search stategy to expand nodes for DropOff action
+    //this is a helper function used by all functions performing a search strategy to expand nodes for DropOff action
     //It takes the node to be expanded returns the state resulting from expanding that node by performing DropOff
     private static State DropOff(State nodeToExpandState , State initState){
         int peopleOnBoard = initState.spotsAvailable - nodeToExpandState.spotsAvailable;
@@ -277,7 +180,7 @@ public class CoastGuard extends SearchProblem{
                 nodeToExpandState.boxesRetrieved, shipsWithPeopleAlive);
         return newState;
     }
-    //this is a helper function used by all functions performing a search stategy to expand nodes for Retrieve action
+    //this is a helper function used by all functions performing a search strategy to expand nodes for Retrieve action
     //It takes the node to be expanded returns the state resulting from expanding that node by performing Retrieve
     private static State retrieve ( State nodeToExpandState){
         HashMap<String, Ship> myships = new HashMap<>();
@@ -355,7 +258,7 @@ public class CoastGuard extends SearchProblem{
 
     }
      // This function generates a plan by traversing the search tree (hypothetically) in BFS fashion
-    // It takes the matrix represtation of the world and the initial state and returns a string plan
+    // It takes the matrix representation of the world and the initial state and returns a string plan
     private static String BFS(int[][] matrix, State initState,boolean visualize){
         int expanded =0;
         //To avoid redundant states we use a Hashset that stores stringified values of the state
@@ -631,6 +534,103 @@ public class CoastGuard extends SearchProblem{
         }
 
         return "";
+    }
+    // a function that is used as a helper method to the first heuristic function to calculate the minimum distance
+    // between the coast guard and the ship with maximum people count that is still not wrecked
+    // and also returns the number of people on the ship with maximum people on
+    private static int[] maxPeopleNDistGuardShip (HashMap<String,Ship> ships,int guardx, int guardy){
+        int max_people = Integer.MIN_VALUE;
+        int dist =0;
+        for (String key: ships.keySet()) {
+            String[] loc = key.split(",");
+            int people= ships.get(key).aliveOnBoard;
+
+            if (people> max_people){
+                int xShip = Integer.parseInt(loc[0]);
+                int yShip = Integer.parseInt(loc[1]);
+                dist = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
+                max_people= people;
+            }
+            else if(people==max_people){
+                int xShip = Integer.parseInt(loc[0]);
+                int yShip = Integer.parseInt(loc[1]);
+                int dist2 = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
+                if(dist>dist2){
+                    dist=dist2;
+                }
+            }
+
+
+        }
+        return new int []{max_people,dist};
+    }
+    //Heuristic for GR1 and AS1
+    //this heuristic approximates the number of deaths by calculating the manhattan distance between the coast guard and the closest
+    //ship with maximum number of passengers. The function then approximates the number of people that will die in that distance
+    private static int calcHeuristic1(int peopleToRescue,int minDistGuardShipsToMax, int maxPeople){
+        int deadCount= 0;
+        if(maxPeople<= minDistGuardShipsToMax)   {
+            deadCount+= maxPeople;
+        }
+        else{
+            deadCount+= minDistGuardShipsToMax;
+        }
+        if (peopleToRescue-maxPeople<=minDistGuardShipsToMax){
+            deadCount+= peopleToRescue-maxPeople;
+        }
+        else{
+            deadCount+= minDistGuardShipsToMax;
+        }
+
+        return deadCount;
+
+
+    }
+    // a function that is used as a helper method to the second heuristic function to calculate the minimum distance
+    // between the coast guard and the closest ship that is still not wrecked
+    // and also returns the number of people on the closest ship
+    // if two ships are with the same minimum distance the function returns the number of people on the one with greater number of people on
+    private static int[] minDistGuardShip ( HashMap<String,Ship> ships,int guardx, int guardy ){
+        int min = Integer.MAX_VALUE;
+        int max_people =Integer.MIN_VALUE;
+        for (String key: ships.keySet()) {
+            String[] loc = key.split(",");
+            int xShip = Integer.parseInt(loc[0]);
+            int yShip = Integer.parseInt(loc[1]);
+            int distance = Math.abs(xShip - guardx) + Math.abs(yShip - guardy);
+            if (distance < min){
+                min = distance;
+                max_people = ships.get(key).aliveOnBoard;
+            }
+            else if(distance == min){
+                int people =ships.get(key).aliveOnBoard;
+
+                max_people = (people>max_people)? people:max_people;
+            }
+        }
+        return new int []{min,max_people};
+    }
+    //Heuristic for GR2 and AS2
+    //this heuristic approximates the number of deaths by calculating the manhattan distance between the coast guard and the closest
+    //ship. The function then approximates the number of people that will die in that distance
+    private static int calcHeuristic2(int peopleToRescue,int minDistGuardShips, int peopleOnMin){
+        int peopleDead = 0;
+
+        if(peopleOnMin < minDistGuardShips)   {
+            peopleDead+=peopleOnMin;
+        }
+        else{
+            peopleDead+=minDistGuardShips;
+        }
+        if (peopleToRescue-peopleOnMin< minDistGuardShips){
+            peopleDead+=(peopleToRescue-peopleOnMin);
+        }
+        else{
+            peopleDead+=minDistGuardShips;
+        }
+
+        return peopleDead;
+
     }
 
     // This function generates a plan by traversing the search tree (hypothetically) in greedy fashion
